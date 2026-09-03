@@ -26,23 +26,26 @@
     font-family:inherit;background:none;border:0;padding:.2rem 0;
     color:var(--paper);font-size:1.7rem;font-weight:400;letter-spacing:-.01em;
     cursor:pointer;transition:opacity .12s;
+    text-decoration:underline;text-underline-offset:.28em;text-decoration-thickness:1.5px;
   }
   .tap:active{opacity:.45}
   .tap:focus-visible{outline:2px solid var(--paper);outline-offset:6px;border-radius:2px}
-  .tap[disabled]{cursor:default}
-  .stop{margin-top:.35rem;font-size:1rem;font-weight:400;color:var(--dim);letter-spacing:.01em}
+  .tap[disabled]{cursor:default;text-decoration:none;opacity:.75}
 
-  .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem}
-  #board{text-align:center}
-  .clock{font-size:clamp(3.2rem,15vw,4.6rem);font-weight:400;line-height:1;letter-spacing:-.02em}
-  .mins{font-size:clamp(9rem,44vw,15rem);font-weight:700;line-height:.86;letter-spacing:-.04em}
+  .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #board{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .stop{font-size:1.35rem;font-weight:400;color:var(--dim);margin-bottom:.1rem}
+  .mins{font-size:clamp(9rem,44vw,15rem);font-weight:700;line-height:.88;letter-spacing:-.04em}
   .mins i{font-style:normal}
+  .clock{font-size:clamp(3.2rem,15vw,4.6rem);font-weight:400;line-height:1;letter-spacing:-.02em;margin-top:.15rem}
   .msg{font-size:1.5rem;font-weight:500;line-height:1.3;text-align:center;color:var(--dim);max-width:18ch}
 
-  .rest{display:flex;flex-direction:column;gap:.55rem;align-items:center;padding-bottom:1rem}
-  .row{font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em}
-  .row b{font-weight:700}
-  .row span{font-weight:400;color:var(--dim)}
+  .rest{display:flex;flex-direction:column;gap:.5rem;padding-bottom:1rem}
+  .row{display:flex;align-items:center;gap:1rem;font-size:clamp(1.5rem,6.5vw,2rem);line-height:1.1;letter-spacing:-.01em}
+  .row .t{font-weight:400}
+  .row .dash{flex:1;border-top:2px dashed var(--dim);opacity:.6;min-width:2rem}
+  .row .m{font-weight:400;color:var(--dim);white-space:nowrap}
+
   body.soon{background:var(--red)}
   @media (prefers-reduced-motion:reduce){body{transition:none}}
   [hidden]{display:none!important}
@@ -50,18 +53,16 @@
 </head>
 <body>
 
-<div>
-  <div class="top">
-    <button class="tap" id="lineBtn">Line 12</button>
-    <button class="tap" id="dirBtn">→ Zollstock</button>
-  </div>
-  <div class="stop" id="stopName"></div>
+<div class="top">
+  <button class="tap" id="lineBtn">Line 12</button>
+  <button class="tap" id="dirBtn">→ Zollstock</button>
 </div>
 
 <div class="mid">
   <div id="board" hidden>
-    <div class="clock" id="clock"></div>
+    <div class="stop" id="stopName"></div>
     <div class="mins" id="mins"></div>
+    <div class="clock" id="clock"></div>
   </div>
   <div class="msg" id="msg">loading</div>
 </div>
@@ -171,7 +172,7 @@ function draw(){
   $('mins').innerHTML = m===0 ? 'now' : m+'<i>&prime;</i>';
 
   $('rest').innerHTML=runs.slice(1,4).map(s=>
-    `<div class="row"><b>${hhmm(s.when)}</b> <span>in ${Math.round((s.when-now)/60000)} min</span></div>`
+    `<div class="row"><span class="t">${hhmm(s.when)}</span><span class="dash"></span><span class="m">in ${Math.round((s.when-now)/60000)} min</span></div>`
   ).join('');
 }
 
