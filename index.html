@@ -9,11 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --blue:#0A1FD1; --paper:#FFFFFF; --dim:rgba(255,255,255,.52); }
+  :root{ --blue:#0A1FD1; --red:#D4180C; --paper:#FFFFFF; --dim:rgba(255,255,255,.52); }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{
     background:var(--blue);color:var(--paper);
+    transition:background-color .25s ease;
     font-family:'Inter',system-ui,-apple-system,sans-serif;
     font-variant-numeric:tabular-nums;
     min-height:100dvh;display:flex;flex-direction:column;
@@ -32,6 +33,7 @@
   .stop{margin-top:.35rem;font-size:1rem;font-weight:400;color:var(--dim);letter-spacing:.01em}
 
   .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem}
+  #board{text-align:center}
   .clock{font-size:clamp(3.2rem,15vw,4.6rem);font-weight:400;line-height:1;letter-spacing:-.02em}
   .mins{font-size:clamp(9rem,44vw,15rem);font-weight:700;line-height:.86;letter-spacing:-.04em}
   .mins i{font-style:normal}
@@ -41,7 +43,8 @@
   .row{font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em}
   .row b{font-weight:700}
   .row span{font-weight:400;color:var(--dim)}
-  .diag{margin-top:.8rem;font-size:.78rem;line-height:1.35;color:var(--dim);word-break:break-word}
+  body.soon{background:var(--red)}
+  @media (prefers-reduced-motion:reduce){body{transition:none}}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -64,7 +67,6 @@
 </div>
 
 <div class="rest" id="rest"></div>
-<div class="diag" id="diag"></div>
 
 <script>
 const STOPS=[
@@ -89,6 +91,11 @@ async function grab(u){
   }
 }
 const $=id=>document.getElementById(id);
+function setUrgent(on){
+  document.body.classList.toggle('soon',on);
+  document.querySelector('meta[name=theme-color]')
+    .setAttribute('content', on ? '#D4180C' : '#0A1FD1');
+}
 const hhmm=d=>new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(d);
 const shortName=h=>(h||'').replace(/^Köln\s+/,'').split(/\s+/)[0];
 
@@ -107,7 +114,6 @@ async function load(){
     }catch(e){ notes.push(st.name+': FAILED '+(e.message||e)); return []; }
   }));
   all=res.flat();
-  $('diag').textContent=notes.join(' | ');
   if(!all.length){
     $('board').hidden=true;$('msg').hidden=false;
     $('msg').textContent='no data — tap to retry';
@@ -128,6 +134,7 @@ function draw(){
   const now=Date.now();
   const L=lines();
   if(!L.length){
+    setUrgent(false);
     $('lineBtn').textContent='—';$('dirBtn').textContent='';
     $('board').hidden=true;$('msg').hidden=false;
     $('msg').textContent='nothing running right now';
@@ -150,6 +157,7 @@ function draw(){
   $('stopName').textContent = runs.length ? runs[0].stop : '';
 
   if(!runs.length){
+    setUrgent(false);
     $('board').hidden=true;$('msg').hidden=false;
     $('msg').textContent='nothing scheduled right now';
     $('rest').innerHTML='';
@@ -158,6 +166,7 @@ function draw(){
   $('msg').hidden=true;$('board').hidden=false;
 
   const m=Math.max(0,Math.round((runs[0].when-now)/60000));
+  setUrgent(m<5);
   $('clock').textContent=hhmm(runs[0].when);
   $('mins').innerHTML = m===0 ? 'now' : m+'<i>&prime;</i>';
 
