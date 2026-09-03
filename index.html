@@ -1,103 +1,176 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1226C8">
-<title>Niehl Nord</title>
+<meta name="theme-color" content="#0A1FD1">
+<title>Niehl departures</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --blue:#1226C8; --paper:#F4F5FF; --dim:rgba(244,245,255,.55); }
+  :root{ --blue:#0A1FD1; --paper:#FFFFFF; --dim:rgba(255,255,255,.52); }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{
     background:var(--blue);color:var(--paper);
-    font-family:'Barlow Condensed',system-ui,sans-serif;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
     font-variant-numeric:tabular-nums;
-    min-height:100dvh;
-    padding:max(1.5rem,env(safe-area-inset-top)) 1.5rem max(1.5rem,env(safe-area-inset-bottom));
-    display:flex;flex-direction:column;justify-content:center;gap:.4rem;
+    min-height:100dvh;display:flex;flex-direction:column;
+    padding:max(1.6rem,env(safe-area-inset-top)) 1.6rem max(2rem,env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
   }
-  .now{
-    font-weight:800;font-size:clamp(9rem,62vw,20rem);line-height:.72;
-    letter-spacing:-.03em;
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+  .tap{
+    font-family:inherit;background:none;border:0;padding:.2rem 0;
+    color:var(--paper);font-size:1.7rem;font-weight:400;letter-spacing:-.01em;
+    cursor:pointer;transition:opacity .12s;
   }
-  .now span{font-size:.16em;letter-spacing:0;margin-left:.1em}
-  .sub{font-weight:600;font-size:2.1rem;color:var(--dim);margin-bottom:1.8rem}
-  .row{
-    display:flex;align-items:baseline;gap:.9rem;
-    font-weight:800;font-size:clamp(3.4rem,18vw,5.5rem);line-height:1.1;
-  }
-  .row em{font-style:normal;font-weight:600;font-size:.42em;color:var(--dim)}
-  .msg{font-weight:600;font-size:1.8rem;line-height:1.2;max-width:16ch}
-  .flip{
-    margin-top:2rem;background:none;border:0;padding:.4rem 0;
-    font-family:inherit;font-weight:600;font-size:1.15rem;
-    color:var(--dim);cursor:pointer;text-align:left;
-  }
-  .flip:focus-visible{outline:2px solid var(--paper);outline-offset:4px}
+  .tap:active{opacity:.45}
+  .tap:focus-visible{outline:2px solid var(--paper);outline-offset:6px;border-radius:2px}
+  .tap[disabled]{cursor:default}
+  .stop{margin-top:.35rem;font-size:1rem;font-weight:400;color:var(--dim);letter-spacing:.01em}
+
+  .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem}
+  .clock{font-size:clamp(3.2rem,15vw,4.6rem);font-weight:400;line-height:1;letter-spacing:-.02em}
+  .mins{font-size:clamp(9rem,44vw,15rem);font-weight:700;line-height:.86;letter-spacing:-.04em}
+  .mins i{font-style:normal}
+  .msg{font-size:1.5rem;font-weight:500;line-height:1.3;text-align:center;color:var(--dim);max-width:18ch}
+
+  .rest{display:flex;flex-direction:column;gap:.55rem;align-items:center;padding-bottom:1rem}
+  .row{font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.1;letter-spacing:-.01em}
+  .row b{font-weight:700}
+  .row span{font-weight:400;color:var(--dim)}
+  .diag{margin-top:.8rem;font-size:.78rem;line-height:1.35;color:var(--dim);word-break:break-word}
   [hidden]{display:none!important}
 </style>
 </head>
 <body>
 
-<div id="board">
-  <div class="now" id="now">–</div>
-  <div class="sub" id="sub"></div>
-  <div id="rest"></div>
+<div>
+  <div class="top">
+    <button class="tap" id="lineBtn">Line 12</button>
+    <button class="tap" id="dirBtn">→ Zollstock</button>
+  </div>
+  <div class="stop" id="stopName"></div>
 </div>
-<div class="msg" id="msg">lädt …</div>
 
-<button class="flip" id="flip">→ Merkenich</button>
+<div class="mid">
+  <div id="board" hidden>
+    <div class="clock" id="clock"></div>
+    <div class="mins" id="mins"></div>
+  </div>
+  <div class="msg" id="msg">loading</div>
+</div>
+
+<div class="rest" id="rest"></div>
+<div class="diag" id="diag"></div>
 
 <script>
-const STOP='de-DELFI_de:05315:15411:1:11';
-const API=`https://api.transitous.org/api/v1/stoptimes?stopId=${encodeURIComponent(STOP)}&n=25&mode=TRAM`;
-let dir='Zollstock';
-const $=id=>document.getElementById(id);
-const hhmm=d=>new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(d);
-
-async function load(){
+const STOPS=[
+  {id:'de-DELFI_de:05315:15411:1:11', name:'Niehl Nord'},
+  {id:'de-DELFI_de:05315:15413:1:11', name:'Niehl Sebastianstr.'}
+];
+const url=s=>`https://api.transitous.org/api/v1/stoptimes?stopId=${encodeURIComponent(s)}&n=30&_=${Date.now()}`;
+const PROXY='https://api.allorigins.win/raw?url=';
+let notes=[];
+async function grab(u){
   try{
-    const r=await fetch(API+'&_='+Date.now());
-    if(!r.ok) throw 0;
-    show(((await r.json()).stopTimes)||[]);
+    const r=await fetch(u);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    notes.push('direct ok');
+    return await r.json();
   }catch(e){
-    $('board').hidden=true;$('msg').hidden=false;
-    $('msg').textContent='keine Verbindung — nochmal antippen';
+    notes.push('direct failed: '+(e.message||e));
+    const r=await fetch(PROXY+encodeURIComponent(u));
+    if(!r.ok) throw new Error('proxy HTTP '+r.status);
+    notes.push('proxy ok');
+    return await r.json();
   }
 }
+const $=id=>document.getElementById(id);
+const hhmm=d=>new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(d);
+const shortName=h=>(h||'').replace(/^Köln\s+/,'').split(/\s+/)[0];
 
-function show(all){
+let all=[], line=null, dir=null;
+
+async function load(){
+  notes=[];
+  const res=await Promise.all(STOPS.map(async st=>{
+    try{
+      const j=await grab(url(st.id));
+      const rows=(j.stopTimes||[])
+        .filter(s=>!s.cancelled&&!s.tripCancelled&&s.place)
+        .map(s=>({...s, stop:st.name}));
+      notes.push(st.name+': '+rows.length+' rows');
+      return rows;
+    }catch(e){ notes.push(st.name+': FAILED '+(e.message||e)); return []; }
+  }));
+  all=res.flat();
+  $('diag').textContent=notes.join(' | ');
+  if(!all.length){
+    $('board').hidden=true;$('msg').hidden=false;
+    $('msg').textContent='no data — tap to retry';
+    return;
+  }
+  draw();
+}
+
+// only offer lines/directions that actually have upcoming departures
+const future = () => {
+  const now = Date.now();
+  return all.filter(s => new Date(s.place.departure||s.place.scheduledDeparture).getTime() > now-60000);
+};
+const lines=()=>[...new Set(future().map(s=>s.routeShortName))].sort((a,b)=>(+a||99)-(+b||99));
+const dirs =()=>[...new Set(future().filter(s=>s.routeShortName===line).map(s=>s.headsign))];
+
+function draw(){
   const now=Date.now();
-  const runs=all
-    .filter(s=>(s.headsign||'').includes(dir)&&!s.cancelled&&!s.tripCancelled)
-    .map(s=>new Date(s.place.departure||s.place.scheduledDeparture))
-    .filter(d=>d.getTime()>now-60000)
-    .sort((a,b)=>a-b);
+  const L=lines();
+  if(!L.length){
+    $('lineBtn').textContent='—';$('dirBtn').textContent='';
+    $('board').hidden=true;$('msg').hidden=false;
+    $('msg').textContent='nothing running right now';
+    $('rest').innerHTML='';$('stopName').textContent='';
+    return;
+  }
+  if(!L.includes(line)) line = L.includes('12') ? '12' : L[0];
+  const D=dirs();
+  if(!D.includes(dir)) dir = D.find(d=>/Zollstock/.test(d)) || D[0];
+
+  const runs=future()
+    .filter(s=>s.routeShortName===line && s.headsign===dir)
+    .map(s=>({when:new Date(s.place.departure||s.place.scheduledDeparture), stop:s.stop}))
+    .sort((a,b)=>a.when-b.when);
+
+  $('lineBtn').textContent = 'Line '+line;
+  $('dirBtn').textContent  = dir ? '\u2192 '+shortName(dir) : '';
+  $('lineBtn').disabled = L.length<2;
+  $('dirBtn').disabled  = D.length<2;
+  $('stopName').textContent = runs.length ? runs[0].stop : '';
 
   if(!runs.length){
     $('board').hidden=true;$('msg').hidden=false;
-    $('msg').textContent='gerade nichts Richtung '+dir;
+    $('msg').textContent='nothing scheduled right now';
+    $('rest').innerHTML='';
     return;
   }
   $('msg').hidden=true;$('board').hidden=false;
 
-  const m=Math.max(0,Math.round((runs[0]-now)/60000));
-  $('now').innerHTML = m===0 ? 'jetzt' : m+'<span>min</span>';
-  $('sub').textContent = hhmm(runs[0]);
-  $('rest').innerHTML = runs.slice(1,4).map(d=>
-    `<div class="row">${hhmm(d)} <em>in ${Math.round((d-now)/60000)}</em></div>`
+  const m=Math.max(0,Math.round((runs[0].when-now)/60000));
+  $('clock').textContent=hhmm(runs[0].when);
+  $('mins').innerHTML = m===0 ? 'now' : m+'<i>&prime;</i>';
+
+  $('rest').innerHTML=runs.slice(1,4).map(s=>
+    `<div class="row"><b>${hhmm(s.when)}</b> <span>in ${Math.round((s.when-now)/60000)} min</span></div>`
   ).join('');
 }
 
-$('flip').onclick=()=>{
-  dir = dir==='Zollstock' ? 'Merkenich' : 'Zollstock';
-  $('flip').textContent = '→ ' + (dir==='Zollstock' ? 'Merkenich' : 'Zollstock');
-  load();
-};
+const cycle=(list,cur)=>list.length?list[(list.indexOf(cur)+1)%list.length]:cur;
+$('lineBtn').onclick=()=>{ if(!all.length) return load(); line=cycle(lines(),line); dir=null; draw(); };
+$('dirBtn').onclick =()=>{ if(!all.length) return load(); dir=cycle(dirs(),dir); draw(); };
+$('msg').onclick=load;
+
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
 setInterval(load,30000);
 load();
