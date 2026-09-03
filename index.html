@@ -7,7 +7,7 @@
 <title>Niehl departures</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{ --blue:#0A1FD1; --red:#D4180C; --paper:#FFFFFF; --dim:rgba(255,255,255,.52); }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -18,7 +18,7 @@
     font-family:'Inter',system-ui,-apple-system,sans-serif;
     font-variant-numeric:tabular-nums;
     min-height:100dvh;display:flex;flex-direction:column;
-    padding:max(1.25rem,env(safe-area-inset-top)) 1.75rem max(1.5rem,env(safe-area-inset-bottom));
+    padding:max(1.25rem,env(safe-area-inset-top)) 1.75rem max(2.25rem,env(safe-area-inset-bottom));
     -webkit-tap-highlight-color:transparent;
   }
   .top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding-bottom:.5rem}
@@ -35,9 +35,8 @@
   .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
   #board{text-align:center;display:flex;flex-direction:column;align-items:center}
   .stop{font-size:1.35rem;font-weight:400;color:var(--dim);margin-bottom:.55rem}
-  .mins{font-size:clamp(10rem,50vw,17rem);font-weight:700;line-height:.88;letter-spacing:-.04em}
+  .mins{font-size:clamp(9.5rem,46vw,16rem);font-weight:600;line-height:.88;letter-spacing:-.04em}
   .mins i{font-style:normal}
-  .mins.word{font-size:clamp(7rem,36vw,12rem)}
   .clock{font-size:clamp(2.7rem,12.5vw,3.9rem);font-weight:400;line-height:1;letter-spacing:-.02em;margin-top:.45rem}
   .msg{font-size:1.5rem;font-weight:500;line-height:1.3;text-align:center;color:var(--dim);max-width:18ch}
 
@@ -170,8 +169,7 @@ function draw(){
   const m=Math.max(0,Math.round((runs[0].when-now)/60000));
   setUrgent(m<5);
   $('clock').textContent=hhmm(runs[0].when);
-  $('mins').classList.toggle('word', m===0);
-  $('mins').innerHTML = m===0 ? 'now' : m+'<i>&prime;</i>';
+  $('mins').innerHTML = (m===0 ? '00' : m)+'<i>&prime;</i>';
 
   $('rest').innerHTML=runs.slice(1,3).map(s=>
     `<div class="row"><span class="t">${hhmm(s.when)}</span><span class="dash"></span><span class="m">in ${Math.round((s.when-now)/60000)} min</span></div>`
